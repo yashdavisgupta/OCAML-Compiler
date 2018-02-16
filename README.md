@@ -25,6 +25,12 @@ pacman -S ocaml
 brew install ocaml
 brew install opam
 ```
+## Operators
+```
+e ::= n | (+ n1 n2) | (- n1 n2) | (* n1 n2) | (/ n1 n2)
+    | true | false | (<= n1 n2) | (if n1 n2 n3)
+    | f | NaN | (+. f1 f2) | (-. f1 f2) | (*. f1 f2) | (/. f1 f2)
+```
 
 ## Running the tests
 
