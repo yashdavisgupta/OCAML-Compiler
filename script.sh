@@ -1,9 +1,9 @@
 ocamlc slangc.ml -o slangc
 pwd
 make
-./slangc foo bar baz > test
-./slangc -length foo bar baz >> test
-./slangc -help foo bar baz >> test
+./slangc ~/csc312/OCAML-Compiler/testprograms/testprogram1.code  > test
+./slangc ~/csc312/OCAML-Compiler/testprograms/testprogram2.code >> test
+./slangc ~/csc312/OCAML-Compiler/testprograms/testprogram3.code >> test
 diff test test.control > /dev/null 2>&1
 error=$?
 if [ $error -eq 0 ]
