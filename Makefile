@@ -1,8 +1,34 @@
-slangc: slangc.ml
-	ocamlc slangc.ml -o slangc
+
+OCBFLAGS :=
+OCB := ocamlbuild $(OCBFLAGS)
+
+.PHONY: all debug clean top
+
+all: slangc.native
+debug: all slangc.cma
+
+%.cma: .FORCE
+	$(OCB) $@
+
+%.cmxa: .FORCE
+	$(OCB) $@
+
+%.native: .FORCE
+	$(OCB) $@
+
+%.p.native: .FORCE
+	$(OCB) $@
+
+%.byte: .FORCE
+	$(OCB) $@
+
+.FORCE:
 
 clean:
-	rm -f *.cm[ioxa] *.cmxa *.a *.o sample *~ test
+	$(OCB) -clean
+
+top: slangc.cma
+	utop
 
 test:
 	sh script.sh

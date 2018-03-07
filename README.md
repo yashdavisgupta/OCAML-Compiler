@@ -25,11 +25,17 @@ pacman -S ocaml
 brew install ocaml
 brew install opam
 ```
-## Operators
+You will also need menhir and utop:
 ```
-e ::= n | (+ n1 n2) | (- n1 n2) | (* n1 n2) | (/ n1 n2)
-    | true | false | (<= n1 n2) | (if n1 n2 n3)
-    | f | NaN | (+. f1 f2) | (-. f1 f2) | (*. f1 f2) | (/. f1 f2)
+opam install menhir
+opam install utop
+```
+## Syntax
+
+```
+e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2
+        | e1 +. e1 | e1 -. e2 | e1 *. e2 | e1 /. e2 //Floating Point Operators.
+        | true | false | e1 <= e2 | if e1 then e2 else e3
 ```
 
 ## Running the tests
