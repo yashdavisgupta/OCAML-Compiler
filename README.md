@@ -30,6 +30,8 @@ You will also need menhir and utop:
 opam install menhir
 opam install utop
 ```
+
+Finally, you will need to enter into script.sh and modify the path files so the bash script reads the correct testprogram/ directory.
 ## Syntax
 
 ```
