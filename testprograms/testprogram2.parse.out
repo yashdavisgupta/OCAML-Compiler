@@ -1,1 +1,1 @@
-((12 -. 14) +. (20 +. 2.3))
+(let pwr = (fix func a -> (fun b -> (if (b = 0) then 1 else (a * ((func a) (b - 1)))))) in ((pwr 14) 5))

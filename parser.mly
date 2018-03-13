@@ -1,24 +1,30 @@
 %{
-open Lang
+  open Lang
 %}
 
 %token <int> INT
-%token <float> FLOAT
+%token <bool> BOOL
+%token <string> NAME
 
-%token TRUE
-%token FALSE
-%token LPAREN     (* ( *)
-%token RPAREN     (* ) *)
-%token PLUS       (* + *)
-%token MINUS      (* - *)
-%token TIMES      (* * *)
-%token SLASH      (* / *)
-%token FPLUS      (* +. *)
-%token FMINUS     (* -. *)
-%token FTIMES     (* *. *)
-%token FSLASH     (* /. *)
-%token IF         (* if *)
-%token LESSEQ     (* <= *)
+%token LPAREN      (* ( *)
+%token RPAREN      (* ) *)
+%token PLUS        (* + *)
+%token MINUS       (* - *)
+%token TIMES       (* * *)
+%token DIVIDE      (* / *)
+%token LESSEQ      (* <= *)
+%token GREATEREQ   (* >= *)
+%token LESSTHAN    (* < *)
+%token GREATERTHAN (* > *)
+%token IF          (* if *)
+%token THEN        (* then *)
+%token ELSE        (* else *)
+%token LET         (* let *)
+%token EQUALS      (* = *)
+%token IN          (* in *)
+%token FUN         (* fun *)
+%token ARROW       (* -> *)
+%token FIX         (* fix *)
 
 %token EOF
 
@@ -27,20 +33,30 @@ open Lang
 %%
 
 prog:
-  | e=exp EOF                           { e }
+  | e=exp EOF  { e }
 
 exp:
-  | n= INT                              { EInt n }
-  | f= FLOAT                            { EFloat f }
-  | TRUE                                { EBool true  }
-  | FALSE                               { EBool false  }
-  | LPAREN e1=exp PLUS e2=exp RPAREN    { EAdd (e1, e2) }
-  | LPAREN e1=exp MINUS e2=exp RPAREN   { ESub (e1, e2) }
-  | LPAREN e1=exp TIMES e2=exp RPAREN   { EMuti (e1, e2) }
-  | LPAREN e1=exp SLASH e2=exp RPAREN   { EDivi (e1, e2) }
-  | LPAREN e1=exp FPLUS e2=exp RPAREN    { EFAdd (e1, e2) }
-  | LPAREN e1=exp FMINUS e2=exp RPAREN   { EFSub (e1, e2) }
-  | LPAREN e1=exp FTIMES e2=exp RPAREN   { EFMuti (e1, e2) }
-  | LPAREN e1=exp FSLASH e2=exp RPAREN   { EFDivi (e1, e2) }
-  | LPAREN IF e1=exp e2=exp e3=exp RPAREN { EIf (e1, e2, e3) }
-  | LPAREN e1=exp LESSEQ e2=exp RPAREN    { ELessEq (e1, e2) }
+  | e1=expBase e=expBin e2=exp         { EBin (e, e1, e2) }
+  | IF e1=exp THEN e2=exp ELSE e3=exp  { EIf (e1, e2, e3) }
+  | LET n=NAME EQUALS e1=exp IN e2=exp { ELet (EVar n, e1, e2) }
+  | f=expBase e=exp                    { EFunctionCall (f, e) }
+  | e=expBase                          { e }
+
+expBin:
+  | PLUS        { EAdd }
+  | MINUS       { ESub }
+  | TIMES       { EMulti }
+  | DIVIDE      { EDivi }
+  | LESSEQ      { ELessEq }
+  | GREATEREQ   { EGreaterEq }
+  | LESSTHAN    { ELessThan }
+  | GREATERTHAN { EGreaterThan }
+  | EQUALS      { EEqual }
+
+expBase:
+  | FUN n=NAME ARROW e=exp          { EVal (VFun (EVar n, e)) }
+  | FIX n1=NAME n2=NAME ARROW e=exp { EVal (VFix (EVar n1, EVar n2, e)) }
+  | i=INT                           { EVal (VLiteral (LInt i)) }
+  | b=BOOL                          { EVal (VLiteral (LBool b)) }
+  | n=NAME                          { EVar n }
+  | LPAREN e=exp RPAREN             { e }

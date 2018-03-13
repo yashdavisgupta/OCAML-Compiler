@@ -10,39 +10,39 @@ let symbols : (string * Parser.token) list =
   ; ("+", PLUS)
   ; ("-", MINUS)
   ; ("*", TIMES)
-  ; ("/", SLASH)
-  ; ("+.", FPLUS)
-  ; ("-.", FMINUS)
-  ; ("*.", FTIMES)
-  ; ("/.", FSLASH)
+  ; ("/", DIVIDE)
+  ; ("<=", LESSEQ)
+  ; (">=", GREATEREQ)
+  ; ("<", LESSTHAN)
+  ; (">", GREATERTHAN)
+  ; ("if", IF)
+  ; ("then", THEN)
+  ; ("else", ELSE)
+  ; ("let", LET)
+  ; ("=", EQUALS)
+  ; ("in", IN)
+  ; ("fun", FUN)
+  ; ("->", ARROW)
+  ; ("fix", FIX)
   ]
 
 let create_symbol lexbuf =
   let str = lexeme lexbuf in
   List.assoc str symbols
-
-let create_int lexbuf = lexeme lexbuf |> int_of_string
 }
 
-let digit = ['0'-'9']
-let frac = '.' digit*
-let exp = ['e' 'E'] ['-' '+']? digit+
-let float = digit* frac? exp?
-let int = '-'? ['0'-'9'] ['0'-'9']*
-
-let symbol     = '(' | ')' | '+' | '-' | '*' | '/' | "+." | "-." | "*." | "/."
 let newline    = '\n' | ('\r' '\n') | '\r'
 let whitespace = ['\t' ' ']
+let digit      = ['0'-'9']
+let var_name   = ['a'-'z'  'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '-' '_' ]*
+
+let symbol = '(' | ')' | '+' | '-' | '*' | '/' | '>' | '<' | "<=" | ">=" | "if" | "then" | "else" | "let" | '=' | "in" | "fun" | "->" | "fix"
 
 rule token = parse
   | eof                       { EOF }
-  | int                       { INT (int_of_string (Lexing.lexeme lexbuf)) }
-  | float                     { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }
+  | digit+                    { INT (int_of_string (lexeme lexbuf)) }
   | whitespace+ | newline+    { token lexbuf }
   | symbol                    { create_symbol lexbuf }
-  | "true"                    { TRUE }
-  | "false"                   { FALSE }
-  | "if"                      { IF }
-  | "<="                      { LESSEQ }
-  | "NaN"                     { FLOAT nan }
+  | "true" | "false"          { BOOL (bool_of_string (lexeme lexbuf)) }
+  | var_name                  { NAME (lexeme lexbuf) }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c) }

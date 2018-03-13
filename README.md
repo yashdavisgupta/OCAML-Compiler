@@ -34,10 +34,15 @@ opam install utop
 
 ```
 e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2
-        | e1 +. e1 | e1 -. e2 | e1 *. e2 | e1 /. e2 //Floating Point Operators.
-        | true | false | e1 <= e2 | if e1 then e2 else e3
+        | b | e1 <= e2 | e1 >= e2 | e1 < e2
+        | e1 > e2 | e1 = e2 | if e1 then e2 else e3
+        | x | let x = e1 in e2 | fun x -> e | e1 e2
 ```
+Example Program (Factorial):
 
+```
+(let fact = (fix func x -> (if (x > 0) then (x * (func (x - 1))) else 1)) in (fact 26))
+```
 ## Running the tests
 
 The testing suite can be accessed by running
