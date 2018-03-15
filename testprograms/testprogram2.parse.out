@@ -1,1 +1,1 @@
-(let pwr = (fix func a -> (fun b -> (if (b = 0) then 1 else (a * ((func a) (b - 1)))))) in ((pwr 14) 5))
+(let pwr : int -> int -> int = (fix func (a:int) : (int -> int) -> (fun (b:int) : int -> (if (b = 0) then 1 else (a * ((func a) (b - 1)))))) in ((pwr 14) 5))
