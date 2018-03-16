@@ -1,1 +1,1 @@
-(((((fun (x:int) : int -> fun (y:int) : int -> x + y) 26) 42)))
+(((((fun x -> fun y -> x + y) 26) 42)))

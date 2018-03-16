@@ -37,14 +37,11 @@ e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2
         | b | e1 <= e2 | e1 >= e2 | e1 < e2
         | e1 > e2 | e1 = e2 | if e1 then e2 else e3
         | x | let x = e1 in e2 | fun x -> e | e1 e2
-        | [] : t | e1 :: e2 | hd e | tl e | empty e
-
-t ::= [t]
 ```
 Example Program (Factorial):
 
 ```
-(let fact : int-> int = (fix func (x:int) : int -> (if (x > 0) then (x * func (x - 1)) else 1)) in fact 26)
+(let fact = (fix func x -> (if (x > 0) then (x * (func (x - 1))) else 1)) in (fact 26))
 ```
 ## Running the tests
 
