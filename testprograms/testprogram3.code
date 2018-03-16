@@ -1,1 +1,1 @@
-(((((fun (x:int) : int -> fun (y:int) : int -> x + y) 26) 42)))
+(let l2 : [bool] = (true :: ([] : bool)) in (head l2))

@@ -10,7 +10,7 @@ let symbols : (string * Parser.token) list =
   ; ("+", PLUS)
   ; ("-", MINUS)
   ; ("*", TIMES)
-  ; ("/", DIVIDE)
+  ; ("/", SLASH)
   ; ("<=", LESSEQ)
   ; (">=", GREATEREQ)
   ; ("<", LESSTHAN)
@@ -39,6 +39,13 @@ let symbols : (string * Parser.token) list =
   ; ("hd", HEAD)
   ; ("tl", TAIL)
   ; ("empty", EMPTY)
+  ; ("ref", REF)
+  ; (":=", SET)
+  ; ("!", BANG)
+  ; (";", SEMI)
+  ; ("while", WHILE)
+  ; ("do", DO)
+  ; ("end", END)
   ]
 
 let create_symbol lexbuf =
@@ -58,8 +65,8 @@ let var_name   = ['a'-'z'  'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_' ]*
 let symbol = '(' | ')' | '+' | '-' | '*' | '/' | '>' | '<' | "<=" | ">=" | "if"
                  | "then" | "else" | "let" | '=' | "in" | "fun" | "->" | "fix"
                  | "int" | "bool" | "()" | "unit" | "fst" | "snd" | ':' | ',' | '['
-                 | ']' | "[]" | "::"
-                 | "hd" | "tl" | "empty"
+                 | ']' | "[]" | "::" | "hd" | "tl" | "empty"| '!' | ';' | "ref" | ":="
+                 | "while" | "do" | "end"
 
 rule token = parse
   | eof                       { EOF }
