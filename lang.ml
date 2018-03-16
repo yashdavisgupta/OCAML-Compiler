@@ -56,18 +56,6 @@ let exp_to_stringBin (e: expBin) : string =
   | EGreaterThan  -> ">"
   | EEqual        -> "="
 
-let string_of_bin_op (e: expBin) =
-  match e with
-  | EAdd          -> "+"
-  | ESub          -> "-"
-  | EMulti        -> "*"
-  | EDivi         -> "/"
-  | ELessThan     -> "<"
-  | ELessEq       -> "<="
-  | EGreaterThan  -> ">"
-  | EGreaterEq    -> ">="
-  | EEqual        -> "="
-
 let rec string_of_type (t: typ) : string =
   match t with
   | TInt -> "int"
