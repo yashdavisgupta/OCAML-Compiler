@@ -30,8 +30,6 @@ let symbols : (string * Parser.token) list =
   ; ("()", UNIT)
   ; ("unit", TUNIT)
   ; (",", COMMA)
-  ; ("fst", FIRST)
-  ; ("snd", SECOND)
   ; ("[", LSQUARE)
   ; ("]", RSQUARE)
   ; ("[]", EMPTYLIST)
@@ -64,7 +62,7 @@ let var_name   = ['a'-'z'  'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_' ]*
 
 let symbol = '(' | ')' | '+' | '-' | '*' | '/' | '>' | '<' | "<=" | ">=" | "if"
                  | "then" | "else" | "let" | '=' | "in" | "fun" | "->" | "fix"
-                 | "int" | "bool" | "()" | "unit" | "fst" | "snd" | ':' | ',' | '['
+                 | "int" | "bool" | "()" | "unit" | ':' | ',' | '['
                  | ']' | "[]" | "::" | "head" | "tail" | "empty"| '!' | ';' | "ref" | ":="
                  | "while" | "do" | "end"
 

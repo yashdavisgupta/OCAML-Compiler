@@ -20,7 +20,7 @@ type typ =
   | TBool
   | TFun of typ * typ
   | TUnit
-  | TPair of typ * typ
+  | TTuple of typ list
   | TList of typ
   | TRef of typ
 
@@ -29,7 +29,7 @@ type value =
   | VFun of exp * exp * typ * typ
   | VFix of exp * exp * exp * typ * typ
   | VUnit
-  | VPair of exp * exp
+  | VTuple of exp list
   | VEmptyList of typ
   | VCons of exp * exp
   | VPtr of int
@@ -40,8 +40,7 @@ and exp =
   | EVar of string
   | ELet of exp * exp * exp * typ
   | EFunctionCall of exp * exp
-  | EFirst of exp
-  | ESecond of exp
+  | ENth of exp * exp
   | EHead of exp
   | ETail of exp
   | EEmpty of exp
@@ -69,7 +68,7 @@ let rec string_of_type (t: typ) : string =
   | TBool -> "bool"
   | TFun (t1, t2) -> ((string_of_type t1) ^ " -> " ^ (string_of_type t2))
   | TUnit -> "unit"
-  | TPair (t1, t2) -> ("(" ^ (string_of_type t1) ^ " * " ^ (string_of_type t2) ^ ")")
+  | TTuple (t :: rest) -> ("(" ^ (string_of_type t) ^ (String.concat "" (map (fun x -> " * " ^ x) (map string_of_type rest)) ^ ")"))
   | TList t -> ("[" ^ (string_of_type t) ^ "]")
   | TRef t -> ("<" ^ (string_of_type t) ^ ">")
 
@@ -81,8 +80,7 @@ let rec exp_to_string (e: exp) : string =
   | EVar s -> s
   | ELet (e1, e2, e3, t) -> ("(let " ^ (exp_to_string e1) ^ " : " ^ (string_of_type t) ^ " = " ^ (exp_to_string e2) ^ " in " ^ (exp_to_string e3) ^ ")")
   | EFunctionCall (e1, e2) -> ("(" ^ (exp_to_string e1) ^ " " ^ (exp_to_string e2) ^ ")")
-  | EFirst e -> ("(fst " ^ (exp_to_string e) ^ ")")
-  | ESecond e -> ("(snd " ^ (exp_to_string e) ^ ")")
+  | ENth (e1, e2) -> ("(nth " ^ (exp_to_string e1) ^ " " ^ (exp_to_string e2) ^ ")")
   | EHead e -> ("(head " ^ (exp_to_string e) ^ ")")
   | ETail e -> ("(tail " ^ (exp_to_string e) ^ ")")
   | EEmpty e -> ("(empty " ^ (exp_to_string e) ^ ")")
@@ -98,7 +96,8 @@ and value_to_string (v: value) : string =
   | VFun (e1, e2, t1, t2) -> ("(fun (" ^ (exp_to_string e1) ^ ": " ^ (string_of_type t1) ^ ") : " ^ (string_of_type t2) ^ " -> " ^ (exp_to_string e2) ^ ")")
   | VFix (e1, e2, e3, t1, t2) -> ("(fix " ^ (exp_to_string e1) ^ " (" ^ (exp_to_string e2) ^ ": " ^ (string_of_type t1) ^ ") : " ^ (string_of_type t2) ^ " -> " ^ (exp_to_string e3) ^ ")")
   | VUnit -> "()"
-  | VPair (e1, e2) -> ("(" ^ (exp_to_string e1) ^ ", " ^ (exp_to_string e2) ^ ")")
+  | VTuple ([]) -> "()T"
+  | VTuple (e :: rest) -> ("(" ^ (exp_to_string e) ^ (String.concat "" (map (fun x -> ", " ^ x) (map exp_to_string rest))) ^ ")")
   | VEmptyList t -> ("([] : " ^ (string_of_type t) ^ ")")
   | VCons (e1, e2) -> ("(" ^ (exp_to_string e1) ^ " :: " ^ (exp_to_string e2) ^ ")")
   | VPtr i -> ("(Pointer Address: " ^ (string_of_int i) ^ ")")
@@ -111,8 +110,7 @@ let rec exp_to_string' (e: exp) : string =
   | EVar s -> s
   | ELet (e1, e2, e3, t) -> ("(let " ^ (exp_to_string' e1) ^ " : " ^ (string_of_type t) ^ " = " ^ (exp_to_string' e2) ^ " in " ^ (exp_to_string' e3) ^ ")")
   | EFunctionCall (e1, e2) -> ("(" ^ (exp_to_string' e1) ^ " " ^ (exp_to_string' e2) ^ ")")
-  | EFirst e -> ("(fst " ^ (exp_to_string' e) ^ ")")
-  | ESecond e -> ("(snd " ^ (exp_to_string' e) ^ ")")
+  | ENth (e1, e2) -> ("(nth " ^ (exp_to_string' e1) ^ " " ^ (exp_to_string' e2) ^ ")")
   | EHead e -> ("(head " ^ (exp_to_string' e) ^ ")")
   | ETail e -> ("(tail " ^ (exp_to_string' e) ^ ")")
   | EEmpty e -> ("(empty " ^ (exp_to_string' e) ^ ")")
@@ -128,10 +126,25 @@ and value_to_string' (v: value) : string =
   | VFun (e1, e2, t1, t2) -> ("(fun (" ^ (exp_to_string' e1) ^ ":" ^ (string_of_type t1) ^ ") : " ^ (string_of_type t2) ^ " -> " ^ (exp_to_string' e2) ^ ")")
   | VFix (e1, e2, e3, t1, t2) -> ("(fix " ^ (exp_to_string' e1) ^ " (" ^ (exp_to_string' e2) ^ ":" ^ (string_of_type t1) ^ ") : (" ^ (string_of_type t2) ^ ") -> " ^ (exp_to_string' e3) ^ ")")
   | VUnit -> "()"
-  | VPair (e1, e2) -> ("(" ^ (exp_to_string' e1) ^ ", " ^ (exp_to_string' e2) ^ ")")
-  | VEmptyList t -> ("([] : " ^ (string_of_type t) ^ ")")
+  | VTuple ([]) -> "()T"
+  | VTuple (e :: rest) -> ("(" ^ (exp_to_string e) ^ (String.concat "" (map (fun x -> ", " ^ x) (map exp_to_string rest))) ^ ")")  | VEmptyList t -> ("([] : " ^ (string_of_type t) ^ ")")
   | VCons (e1, e2) -> ("(" ^ (exp_to_string' e1) ^ " :: " ^ (exp_to_string' e2) ^ ")")
   | VPtr i -> ("(Pointer Address: " ^ (string_of_int i) ^ ")")
+
+let exp_to_value (e: exp) : value =
+  match e with
+  | EVal v -> v
+  | _ -> failwith ("exp_to_value called with incompatable expression: " ^ (exp_to_string' e))
+
+let val_to_int v =
+  match v with
+  | VLiteral (LInt i) -> i
+  | _ -> failwith "Error, val_to_int needs a val of type int"
+
+let val_to_bool v =
+  match v with
+  | VLiteral (LBool b) -> b
+  | _ -> failwith "Error, val_to_bool needs a val of type bool"
 
 let rec compare_type (t1: typ) (t2: typ) : bool =
   match t1, t2 with
@@ -139,7 +152,8 @@ let rec compare_type (t1: typ) (t2: typ) : bool =
   | TBool, TBool -> true
   | TFun (t1, t2), TFun (t3, t4) -> (compare_type t1 t3) && (compare_type t2 t4)
   | TUnit, TUnit -> true
-  | TPair (t1, t2), TPair (t3, t4) -> (compare_type t1 t3) && (compare_type t2 t4)
+  | TTuple [], TTuple [] -> true
+  | TTuple (t1 :: rest1), TTuple (t2 :: rest2) -> (compare_type t1 t2) && (compare_type (TTuple rest1) (TTuple rest2))
   | TList t1, TList t2 -> (compare_type t1 t2)
   | TRef t1, TRef t2 -> (compare_type t1 t2)
   | _ -> false
@@ -169,7 +183,13 @@ let rec typecheck (c: (string * typ) list) (e: exp) : typ =
     if compare_type e_type t2 then TFun (t1, t2)
     else failwith ("Fixpoint typechecking failed, expected return type of " ^ (string_of_type (TFun (t1, t2))) ^ ", instead recieved " ^ (string_of_type (TFun (t1, e_type))))
   | EVal (VUnit) -> TUnit
-  | EVal (VPair (e1, e2)) -> TPair ((typecheck c e1), (typecheck c e2))
+  | EVal (VTuple []) -> TTuple ([])
+  | EVal (VTuple (e :: rest)) ->
+    begin
+      match (typecheck c (EVal (VTuple rest))) with
+      | TTuple (rest') -> (TTuple ((typecheck c e) :: rest'))
+      | _ -> failwith "Tuples typechecking failed"
+    end
   | EVal (VEmptyList t) -> TList t
   | EVal (VCons (e1, e2)) ->
     begin
@@ -212,26 +232,20 @@ let rec typecheck (c: (string * typ) list) (e: exp) : typ =
         end
       | _ -> failwith ("Fun call typechecking error, first expression should be of type function, instead recieved " ^ (string_of_type e1_type))
     end
-  | EFirst e ->
-    begin
-      let e_type = (typecheck c e) in
-      match e_type with
-      | TPair (t1, t2) -> t1
-      | _ -> failwith ("Typechecking failed, exp should be of type pair, instead recieved " ^ (string_of_type e_type))
-    end
-  | ESecond e ->
-    begin
-      let e_type = (typecheck c e) in
-      match e_type with
-      | TPair (t1, t2) -> t2
-      | _ -> failwith ("Typechecking failed, exp should be of type pair, instead recieved " ^ (string_of_type e_type))
-    end
+  | ENth (e1, e2) ->
+    if (not (compare_type (typecheck c e2) TInt)) then (failwith ("Nth typechecking failed, expects int"))
+    else
+      begin
+        match (typecheck c e1) with
+        | TTuple l -> (nth l (val_to_int (exp_to_value e2)))
+        | t -> failwith ("Nth typechecking failed, should recieve tuple first, instead recieved: " ^ (string_of_type t))
+      end
   | EHead e ->
     begin
       let e_type = (typecheck c e) in
       match e_type with
       | TList t -> t
-      | _ -> failwith ("Typechecking failed, exp should be of type list, instead recieved " ^ (string_of_type e_type))
+      | _ -> failwith ("Head typechecking failed, exp should be of type list, instead recieved " ^ (string_of_type e_type))
     end
   | ETail e ->
     begin
@@ -245,7 +259,7 @@ let rec typecheck (c: (string * typ) list) (e: exp) : typ =
       let e_type = (typecheck c e) in
       match e_type with
       | TList t -> TBool
-      | _ -> failwith ("empty typechecking failed, exp should be of type list, instead recieved " ^ (string_of_type e_type))
+      | _ -> failwith ("Empty typechecking failed, exp should be of type list, instead recieved " ^ (string_of_type e_type))
     end
   | ERef e -> TRef (typecheck c e)
   | EAssign (e1, e2) ->
@@ -291,7 +305,13 @@ let rec interpret' (v: value) (s: string) (e: exp) : exp =
           | _ -> EVal (VFix (EVar f, EVar x, (interpret' v s e'), t1, t2))
         end
       | VUnit -> e
-      | VPair (e1, e2) -> EVal (VPair ((interpret' v s e1), (interpret' v s e2)))
+      | VTuple [] -> EVal (VTuple [])
+      | VTuple (ex :: rest) ->
+        begin
+          match (interpret' v s (EVal (VTuple rest))) with
+          | EVal (VTuple rest') -> EVal (VTuple ((interpret' v s ex) :: rest'))
+          | _ -> failwith "Tuple substitution unexpected value"
+        end
       | VEmptyList t -> EVal (VEmptyList t)
       | VCons (e1, e2) -> EVal (VCons ((interpret' v s e1), (interpret' v s e2)))
       | VPtr i -> e
@@ -303,8 +323,7 @@ let rec interpret' (v: value) (s: string) (e: exp) : exp =
   | ELet (EVar str, e1, e2, t) -> (if (compare str s) = 0 then e
                                    else ELet (EVar str, (interpret' v s e1), (interpret' v s e2), t))
   | EFunctionCall (f, e2) -> EFunctionCall ((interpret' v s f), (interpret' v s e2))
-  | EFirst e -> EFirst (interpret' v s e)
-  | ESecond e -> ESecond (interpret' v s e)
+  | ENth (e1, e2) -> (ENth ((interpret' v s e1), (interpret' v s e2)))
   | EHead e -> EHead (interpret' v s e)
   | ETail e -> ETail (interpret' v s e)
   | EEmpty e -> EEmpty (interpret' v s e)
@@ -314,16 +333,6 @@ let rec interpret' (v: value) (s: string) (e: exp) : exp =
   | ESequence (e1, e2) -> ESequence ((interpret' v s e1), (interpret' v s e2))
   | EWhile (e1, e2, e3) -> EWhile ((interpret' v s e1), (interpret' v s e2), (interpret' v s e3))
   | _ -> failwith "Interpret': unknown expression"
-
-let val_to_int v =
-  match v with
-  | VLiteral (LInt i) -> i
-  | _ -> failwith "Error, val_to_int needs a val of type int"
-
-let val_to_bool v =
-  match v with
-  | VLiteral (LBool b) -> b
-  | _ -> failwith "Error, val_to_bool needs a val of type bool"
 
 let oldInterpret (e: expBin) (v1: value) (v2: value) : value =
   let i1 = val_to_int v1 in
@@ -341,15 +350,11 @@ let oldInterpret (e: expBin) (v1: value) (v2: value) : value =
 
 let rec is_value (e: exp) : bool =
   match e with
-  | EVal (VPair (e1, e2)) -> (is_value e1) && (is_value e2)
+  | EVal (VTuple []) -> true
+  | EVal (VTuple (ex :: rest)) -> (is_value ex) && (is_value (EVal (VTuple rest)))
   | EVal (VCons (e1, e2)) -> (is_value e1) && (is_value e2)
   | EVal _ -> true
   | _ -> false
-
-let exp_to_value (e: exp) : value =
-  match e with
-  | EVal v -> v
-  | _ -> failwith ("exp_to_value called with incompatable expression: " ^ (exp_to_string' e))
 
 let rec interpret (env: (int * value) list) (e: exp) : (int * value) list * exp =
   match e with
@@ -361,214 +366,206 @@ let rec interpret (env: (int * value) list) (e: exp) : (int * value) list * exp 
         | env', e1' -> (env', ESequence (e1', e2))
       end
     else (env, e2)
-  | EVal (VPair (e1, e2)) ->
+  | EVal (VTuple []) -> (env, e)
+  | EVal (VTuple (ex :: rest)) ->
+    let interp_e1 = not (is_value ex) in
+    if interp_e1 then
+      let (env', ex') = (interpret env ex) in (env', EVal (VTuple (ex' :: rest)))
+    else
+      begin
+        match (interpret env (EVal (VTuple rest))) with
+        | env', EVal (VTuple rest') -> (env', EVal (VTuple (ex :: rest')))
+      end
+  | EVal (VCons (e1, e2)) ->
     let e1' = not (is_value e1) in
     let e2' = not (is_value e2) in
     if e1' then
-      let (env', e1') = (interpret env e1) in (env', EVal (VPair (e1', e2)))
+      let (env', e1') = (interpret env e1) in (env', EVal (VCons (e1', e2)))
     else if e2' then
-      let (env', e2') = (interpret env e2) in (env', EVal (VPair (e1, e2')))
+      let (env', e2') = (interpret env e2) in (env', EVal (VCons (e1, e2')))
     else (env, e)
-    | EVal (VCons (e1, e2)) ->
+  | EVal v -> (env, e)
+  | EBin (op, e1, e2) ->
+    begin
       let e1' = not (is_value e1) in
       let e2' = not (is_value e2) in
-      if e1' then
-        let (env', e1') = (interpret env e1) in (env', EVal (VCons (e1', e2)))
-      else if e2' then
-        let (env', e2') = (interpret env e2) in (env', EVal (VCons (e1, e2')))
-      else (env, e)
-    | EVal v -> (env, e)
-    | EBin (op, e1, e2) ->
-      begin
-        let e1' = not (is_value e1) in
-        let e2' = not (is_value e2) in
-        match e1', e2' with
-        | true, _ ->
-          begin
-            match (interpret env e1) with
-            | env', e1' -> (env', EBin (op, e1', e2))
-          end
-        | false, true ->
-          begin
-            match (interpret env e2) with
-            | env', e2' -> (env', EBin (op, e1, e2'))
-          end
-        | false, false -> (env, EVal (oldInterpret op (exp_to_value e1) (exp_to_value e2)))
-      end
-    | EIf (e1, e2, e3) ->
-      begin
-        let e1' = not (is_value e1) in
-        match e1' with
-        | true ->
-          begin
-            match (interpret env e1) with
-            | env', e1' -> (env', EIf (e1', e2, e3))
-          end
-        | false -> if (val_to_bool (exp_to_value e1))
-          then (interpret env e2) else (interpret env e3)
-      end
-    | ELet (EVar s, e1, e2, t) ->
-      begin
-        let e1' = not (is_value e1) in
-        if e1' then
-          begin
-            match (interpret env e1) with
-            | env', e1' -> (env', ELet ((EVar s), e1', e2, t))
-          end
-        else (env, (interpret' (exp_to_value e1) s e2))
-      end
-    | EVar s -> failwith (s ^ " isn't a variable");
-    | EFunctionCall (e1, e2) ->
-      begin
-        let e2' = not (is_value e2) in
-        if e2' then
-          begin
-            match (interpret env e2) with
-            | env', e2' -> (env', EFunctionCall (e1, e2'))
-          end
-        else
-          match e1 with
-          | EFunctionCall _ ->
-            begin
-              match (interpret env e1) with
-              | env', e1' -> (env', EFunctionCall (e1', e2))
-            end
-          | EVal (VFun (EVar s, f, t1, t2)) -> (env, interpret' (exp_to_value e2) s f)
-          | EVal (VFix (EVar f, EVar x, e, t1, t2)) ->
-            let interpret_x = interpret' (exp_to_value e2) x e in
-            (env, interpret' (exp_to_value e1) f interpret_x)
-          | _ -> failwith ("Check your formatting")
-      end
-    | EFirst ex ->
-      let interp_ex = not (is_value ex) in
-      if interp_ex then
+      match e1', e2' with
+      | true, _ ->
         begin
-          match (interpret env ex) with
-          | env', ex' -> (env', EFirst ex')
+          match (interpret env e1) with
+          | env', e1' -> (env', EBin (op, e1', e2))
         end
-      else
+      | false, true ->
         begin
-          match (exp_to_value ex) with
-          | VPair (e1, e2) -> (env, e1)
-          | _ -> failwith ("Fst typechecking error")
+          match (interpret env e2) with
+          | env', e2' -> (env', EBin (op, e1, e2'))
         end
-    | ESecond ex ->
-      let interp_ex = not (is_value ex) in
-      if interp_ex then
-        begin
-          match (interpret env ex) with
-          | env', ex' -> (env', ESecond ex')
-        end
-      else
-        begin
-          match (exp_to_value ex) with
-          | VPair (e1, e2) -> (env, e2)
-          | _ -> failwith ("Snd typechecking error")
-        end
-    | EHead ex ->
-      let interp_ex = not (is_value ex) in
-      if interp_ex then
-        begin
-          match (interpret env ex) with
-          | env', ex' -> (env', EHead ex')
-        end
-      else
-        begin
-          match (exp_to_value ex) with
-          | VEmptyList _ -> failwith ("Head: Empty List")
-          | VCons (e1, e2) -> (env, e1)
-          | _ -> failwith ("Head Typechecking Error")
-        end
-    | ETail ex ->
-      let interp_ex = not (is_value ex) in
-      if interp_ex then
-        begin
-          match (interpret env ex) with
-          | env', ex' -> (env', ETail ex')
-        end
-      else
-        begin
-          match (exp_to_value ex) with
-          | VEmptyList _ -> failwith ("Tail: Empty list")
-          | VCons (e1, e2) -> (env, e2)
-          | _ -> failwith ("Tail Typechecking Error")
-        end
-    | EEmpty ex ->
-      let interp_ex = not (is_value ex) in
-      if interp_ex then
-        begin
-          match (interpret env ex) with
-          | env', ex' -> (env', EEmpty ex')
-        end
-      else
-        begin
-          match (exp_to_value ex) with
-          | VEmptyList _ -> (env, EVal (VLiteral (LBool true)))
-          | VCons (e1, e2) -> (env, EVal (VLiteral (LBool false)))
-          | _ -> failwith ("Empty typechecking error")
-        end
-    | ERef ex ->
-      begin
-        let interp_ex = not (is_value ex) in
-        if (interp_ex) then
-          begin
-            match (interpret env ex) with
-            | env', ex' -> (env', ERef ex')
-          end
-        else
-          let new_i = (length env) in
-          ((cons (new_i, (exp_to_value ex)) env), EVal (VPtr new_i))
-      end
-    | EAssign (e1, e2) ->
+      | false, false -> (env, EVal (oldInterpret op (exp_to_value e1) (exp_to_value e2)))
+    end
+  | EIf (e1, e2, e3) ->
+    begin
       let e1' = not (is_value e1) in
-      let e2' = not (is_value e2) in
+      match e1' with
+      | true ->
+        begin
+          match (interpret env e1) with
+          | env', e1' -> (env', EIf (e1', e2, e3))
+        end
+      | false -> if (val_to_bool (exp_to_value e1))
+        then (interpret env e2) else (interpret env e3)
+    end
+  | ELet (EVar s, e1, e2, t) ->
+    begin
+      let e1' = not (is_value e1) in
       if e1' then
         begin
           match (interpret env e1) with
-          | env', e1' -> (env', EAssign (e1', e2))
+          | env', e1' -> (env', ELet ((EVar s), e1', e2, t))
+        end
+      else (env, (interpret' (exp_to_value e1) s e2))
+    end
+  | EVar s -> failwith (s ^ " isn't a variable");
+  | EFunctionCall (e1, e2) ->
+    begin
+      let e2' = not (is_value e2) in
+      if e2' then
+        begin
+          match (interpret env e2) with
+          | env', e2' -> (env', EFunctionCall (e1, e2'))
         end
       else
-        begin
-          if e2' then
-            begin
-              match (interpret env e2) with
-              | env', e2' -> (env', EAssign (e1, e2'))
-            end
-          else
-            begin
-              match ((exp_to_value e1), (exp_to_value e2)) with
-              | VPtr i, v -> ((cons (i, v) env), EVal (VUnit))
-              | v, _ -> failwith("Assignment typechecking error, instead recieved: " ^ (exp_to_string' e1))
-            end
-        end
-    | EBang ex ->
+        match e1 with
+        | EFunctionCall _ ->
+          begin
+            match (interpret env e1) with
+            | env', e1' -> (env', EFunctionCall (e1', e2))
+          end
+        | EVal (VFun (EVar s, f, t1, t2)) -> (env, interpret' (exp_to_value e2) s f)
+        | EVal (VFix (EVar f, EVar x, e, t1, t2)) ->
+          let interpret_x = interpret' (exp_to_value e2) x e in
+          (env, interpret' (exp_to_value e1) f interpret_x)
+        | _ -> failwith ("Check your formatting")
+    end
+  | ENth (e1, e2) ->
+    let interp_e1 = not (is_value e1) in
+    let interp_e2 = not (is_value e2) in
+    if interp_e1 then
+      let (env', e1') = (interpret env e1) in (env', (ENth (e1', e2)))
+    else
+      begin
+        if interp_e2 then let (env', e2') = (interpret env e2) in (env', (ENth (e1, e2')))
+        else
+          let n = (val_to_int (exp_to_value e2)) in
+          begin
+            match e1 with
+            | EVal (VTuple l) -> (env, (nth l n))
+            | _ -> failwith ("Typechecking missed nth")
+          end
+      end
+  | EHead ex ->
+    let interp_ex = not (is_value ex) in
+    if interp_ex then
+      begin
+        match (interpret env ex) with
+        | env', ex' -> (env', EHead ex')
+      end
+    else
+      begin
+        match (exp_to_value ex) with
+        | VEmptyList _ -> failwith ("Head: Empty List")
+        | VCons (e1, e2) -> (env, e1)
+        | _ -> failwith ("Head Typechecking Error")
+      end
+  | ETail ex ->
+    let interp_ex = not (is_value ex) in
+    if interp_ex then
+      begin
+        match (interpret env ex) with
+        | env', ex' -> (env', ETail ex')
+      end
+    else
+      begin
+        match (exp_to_value ex) with
+        | VEmptyList _ -> failwith ("Tail: Empty list")
+        | VCons (e1, e2) -> (env, e2)
+        | _ -> failwith ("Tail Typechecking Error")
+      end
+  | EEmpty ex ->
+    let interp_ex = not (is_value ex) in
+    if interp_ex then
+      begin
+        match (interpret env ex) with
+        | env', ex' -> (env', EEmpty ex')
+      end
+    else
+      begin
+        match (exp_to_value ex) with
+        | VEmptyList _ -> (env, EVal (VLiteral (LBool true)))
+        | VCons (e1, e2) -> (env, EVal (VLiteral (LBool false)))
+        | _ -> failwith ("Empty typechecking error")
+      end
+  | ERef ex ->
+    begin
       let interp_ex = not (is_value ex) in
       if (interp_ex) then
         begin
           match (interpret env ex) with
-          | env', ex' -> (env', EBang ex')
+          | env', ex' -> (env', ERef ex')
         end
       else
-        begin
-          match (exp_to_value ex) with
-          | VPtr i -> (env, EVal (assoc i env))
-          | _ -> failwith ("'!' typechecking error")
-        end
-    | EWhile (e1, e2, e3) ->
-      let e1' = not (is_value e1) in
-      if (e1') then
-        begin
-          match (interpret env e1) with
-          | env', e1' -> (env', EWhile (e1', e2, e3))
-        end
-      else
-        begin
-          match (exp_to_value e1) with
-          | VLiteral (LBool true) -> (env, ESequence(e3, EWhile (e2, e2, e3)))
-          | VLiteral (LBool false) -> (env, EVal (VUnit))
-          | _ -> failwith ("While typechecking error")
-        end
-    | _ -> failwith "Interpretation: missing an expression"
+        let new_i = (length env) in
+        ((cons (new_i, (exp_to_value ex)) env), EVal (VPtr new_i))
+    end
+  | EAssign (e1, e2) ->
+    let e1' = not (is_value e1) in
+    let e2' = not (is_value e2) in
+    if e1' then
+      begin
+        match (interpret env e1) with
+        | env', e1' -> (env', EAssign (e1', e2))
+      end
+    else
+      begin
+        if e2' then
+          begin
+            match (interpret env e2) with
+            | env', e2' -> (env', EAssign (e1, e2'))
+          end
+        else
+          begin
+            match ((exp_to_value e1), (exp_to_value e2)) with
+            | VPtr i, v -> ((cons (i, v) env), EVal (VUnit))
+            | v, _ -> failwith("Assignment typechecking error, instead recieved: " ^ (exp_to_string' e1))
+          end
+      end
+  | EBang ex ->
+    let interp_ex = not (is_value ex) in
+    if (interp_ex) then
+      begin
+        match (interpret env ex) with
+        | env', ex' -> (env', EBang ex')
+      end
+    else
+      begin
+        match (exp_to_value ex) with
+        | VPtr i -> (env, EVal (assoc i env))
+        | _ -> failwith ("'!' typechecking error")
+      end
+  | EWhile (e1, e2, e3) ->
+    let e1' = not (is_value e1) in
+    if (e1') then
+      begin
+        match (interpret env e1) with
+        | env', e1' -> (env', EWhile (e1', e2, e3))
+      end
+    else
+      begin
+        match (exp_to_value e1) with
+        | VLiteral (LBool true) -> (env, ESequence(e3, EWhile (e2, e2, e3)))
+        | VLiteral (LBool false) -> (env, EVal (VUnit))
+        | _ -> failwith ("While typechecking error")
+      end
+  | _ -> failwith "Interpretation: missing an expression"
 
 let eval (e: exp) : value =
   let rec eval' (env: (int * value) list) (e: exp) : exp =

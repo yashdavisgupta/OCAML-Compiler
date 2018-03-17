@@ -1,1 +1,1 @@
-(let a : <int> = (ref (400)) in (let b : <int> = (ref (50 + (! a))) in ((a := ((! b) / 1)); (let c : <bool> = (ref ((! a) > (! b))) in (! c)))))
+(let a : <int> = (ref 400) in (let b : <int> = (ref (50 + (! a))) in ((a := ((! b) / 1)); (let c : <bool> = (ref ((! a) < (! b))) in (! c)))))

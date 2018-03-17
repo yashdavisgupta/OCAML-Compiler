@@ -2,6 +2,8 @@
 
 A project to create a compiler in OCAML for CSC312. The mastery components were completed for 1, 2, 4, 5, and Final projects.
 
+The Final implements a nested comment system and replaces Pairs with tuples of arbitrary length.
+
 ## Getting Started
 
 Simply download the repo as a zip and run the MAKEFILE.

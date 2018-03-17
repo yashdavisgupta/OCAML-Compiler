@@ -31,8 +31,6 @@
 %token UNIT        (* () *)
 %token TUNIT       (* unit *)
 %token COMMA       (* , *)
-%token FIRST       (* fst *)
-%token SECOND      (* snd *)
 %token LSQUARE     (* [ *)
 %token RSQUARE     (* ] *)
 %token EMPTYLIST   (* [] *)
@@ -59,8 +57,8 @@
 %left LESSTHAN GREATERTHAN LESSEQ GREATEREQ EQUALS
 %left PLUS MINUS
 %left SLASH TIMES
-%right CONS
-%nonassoc FIRST SECOND HEAD TAIL EMPTY
+%right CONS LSQUARE RSQUARE
+%nonassoc HEAD TAIL EMPTY
 %left COLON
 %nonassoc BANG
 %nonassoc REF
@@ -84,14 +82,11 @@ exp:
   | e1=exp LESSTHAN e2=exp                           { (EBin (EGreaterThan, e1, e2)) }
   | e1=exp GREATERTHAN e2=exp                        { (EBin (ELessThan, e1, e2)) }
   | e1=exp EQUALS e2=exp                             { (EBin (EEqual, e1, e2)) }
-  | FIRST e=exp                                      { EFirst e }
-  | SECOND e=exp                                     { ESecond e }
   | HEAD e=exp                                       { EHead e }
   | TAIL e=exp                                       { ETail e }
   | EMPTY e=exp                                      { EEmpty e }
   | BANG e=exp                                       { EBang e }
-  | FIRST e=exp                                      { EFirst e }
-  | SECOND e=exp                                     { ESecond e }
+  | e1=exp LSQUARE e2=exp RSQUARE                    { ENth (e1, e2) }
   | HEAD e=exp                                       { EHead e }
   | TAIL e=exp                                       { ETail e }
   | EMPTY e=exp                                      { EEmpty e }
@@ -104,15 +99,19 @@ typ:
   | TBOOL                                            { TBool }
   | t1=typ ARROW t2=typ                              { TFun (t1, t2) }
   | TUNIT                                            { TUnit }
-  | LPAREN t1=typ TIMES t2=typ RPAREN                { TPair (t1,t2) }
+  | LPAREN t1=typ TIMES t2=ttyp RPAREN               { TTuple (t1 :: t2) }
   | LSQUARE t=typ RSQUARE                            { TList t }
   | LESSTHAN t=typ GREATERTHAN                       { TRef t }
   | LPAREN t=typ RPAREN                              { t }
 
+ttyp:
+  | t=typ                                            { (t :: []) }
+  | t1=typ TIMES t2=ttyp                             { (t1 :: t2) }
+
 expBase:
   | FUN LPAREN n=NAME COLON t1=typ RPAREN COLON t2=typ ARROW e=exp           { EVal (VFun (EVar n, e, t1, t2)) }
   | FIX n1=NAME LPAREN n2=NAME COLON t1=typ RPAREN COLON t2=typ ARROW e=exp  { EVal (VFix (EVar n1, EVar n2, e, t1, t2)) }
-  | LPAREN e1=exp COMMA e2=exp RPAREN                                        { EVal (VPair (e1, e2)) }
+  | LPAREN e=exp COMMA t=tuple RPAREN                                        { EVal (VTuple (e :: t)) }
   | EMPTYLIST COLON t=typ                                                    { EVal (VEmptyList t) }
   | e1=exp CONS e2=exp                                                       { EVal (VCons (e1, e2)) }
   | i=INT                                                                    { EVal (VLiteral (LInt i)) }
@@ -120,3 +119,7 @@ expBase:
   | n=NAME                                                                   { EVar n }
   | LPAREN e=exp RPAREN                                                      { e }
   | UNIT                                                                     { EVal VUnit }
+
+tuple:
+  | e=exp                                 { (e :: []) }
+  | e=exp COMMA t=tuple                   { (e :: t) }
