@@ -36,8 +36,8 @@ let symbols : (string * Parser.token) list =
   ; ("]", RSQUARE)
   ; ("[]", EMPTYLIST)
   ; ("::", CONS)
-  ; ("hd", HEAD)
-  ; ("tl", TAIL)
+  ; ("head", HEAD)
+  ; ("tail", TAIL)
   ; ("empty", EMPTY)
   ; ("ref", REF)
   ; (":=", SET)
@@ -65,14 +65,20 @@ let var_name   = ['a'-'z'  'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_' ]*
 let symbol = '(' | ')' | '+' | '-' | '*' | '/' | '>' | '<' | "<=" | ">=" | "if"
                  | "then" | "else" | "let" | '=' | "in" | "fun" | "->" | "fix"
                  | "int" | "bool" | "()" | "unit" | "fst" | "snd" | ':' | ',' | '['
-                 | ']' | "[]" | "::" | "hd" | "tl" | "empty"| '!' | ';' | "ref" | ":="
+                 | ']' | "[]" | "::" | "head" | "tail" | "empty"| '!' | ';' | "ref" | ":="
                  | "while" | "do" | "end"
 
 rule token = parse
   | eof                       { EOF }
   | digit+                    { INT (int_of_string (lexeme lexbuf)) }
   | whitespace+ | newline+    { token lexbuf }
+  | "(*"                      { comments 0 lexbuf }
   | symbol                    { create_symbol lexbuf }
   | "true" | "false"          { BOOL (bool_of_string (lexeme lexbuf)) }
   | var_name                  { create_var lexbuf }
-  | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c) }
+  | _ as c                    { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c) }
+and comments level = parse
+  | "*)"                      { if level = 0 then token lexbuf else comments (level-1) lexbuf }
+  | "(*"                      { comments (level+1) lexbuf }
+  | _                         { comments level lexbuf }
+  | eof                       { raise End_of_file }

@@ -120,4 +120,3 @@ expBase:
   | n=NAME                                                                   { EVar n }
   | LPAREN e=exp RPAREN                                                      { e }
   | UNIT                                                                     { EVal VUnit }
-  | LPAREN e1=exp COMMA e2=exp RPAREN                                        { EVal (VPair (e1, e2)) }
